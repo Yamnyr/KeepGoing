@@ -1,0 +1,29 @@
+[theme]
+# Palette de couleurs principale (dark mode)
+primaryColor = "#6366f1"
+backgroundColor = "#0f172a"              # bleu-noir
+secondaryBackgroundColor = "#1e293b"     # gris ardoise foncé
+textColor = "#f1f5f9"                    # gris très clair pour bon contraste
+
+# Configuration de la police
+font = "sans serif"
+
+[server]
+# Configuration du serveur
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+# Configuration du navigateur
+gatherUsageStats = false
+
+[client]
+# Configuration du client
+showErrorDetails = true
+toolbarMode = "minimal"
+
+[ui]
+# Configuration de l'interface
+hideTopBar = false
+hideSidebarNav = false
