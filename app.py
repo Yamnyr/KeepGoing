@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 
 st.set_page_config(
@@ -15,10 +14,17 @@ if not st.user.is_logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.info("Connectez-vous pour accéder à votre espace personnel")
-        st.button("Se connecter avec Google", on_click=st.login, use_container_width=True)
+        st.button(
+            "Se connecter avec Google",
+            on_click=st.login,
+            kwargs={"provider": "google"},
+            use_container_width=True
+        )
     st.stop()
 
-# Navigation principale
+# Utilisateur connecté
+st.sidebar.success(f"Connecté en tant que {st.user.email}")
+
 pages = [
     st.Page("pages/dashboard.py", title="📊 Tableau de bord"),
     st.Page("pages/add_sport.py", title="➕ Ajouter un sport"),
