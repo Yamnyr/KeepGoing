@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 
 st.set_page_config(
@@ -17,13 +18,7 @@ if not st.user.is_logged_in:
         st.button("Se connecter avec Google", on_click=st.login, use_container_width=True)
     st.stop()
 
-# Utilisateur connecté
-st.sidebar.success(f"Connecté en tant que {st.user.email}")
-
-# Bouton de déconnexion dans la sidebar
-if st.sidebar.button("🚪 Se déconnecter"):
-    st.logout()
-
+# Navigation principale
 pages = [
     st.Page("pages/dashboard.py", title="📊 Tableau de bord"),
     st.Page("pages/add_sport.py", title="➕ Ajouter un sport"),
