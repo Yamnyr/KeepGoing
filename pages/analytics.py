@@ -2,7 +2,10 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from utils import load_user_sports, calculate_stats, get_weekly_progress
+import json
+from datetime import datetime
+from utils import (load_user_sports, calculate_stats, get_weekly_progress,
+                   update_sport_entries, delete_entry)
 
 st.title("Analyse détaillée de vos performances")
 st.divider()
@@ -15,7 +18,7 @@ else:
     # Sélection du mode
     view_mode = st.radio(
         "Mode d'affichage",
-        ["Sport individuel", "Comparaison globale"],
+        ["Sport individuel", "Comparaison globale", "Gestion des données"],
         horizontal=True
     )
 
@@ -73,7 +76,7 @@ else:
         else:
             st.info("Aucune donnée disponible pour ce sport.")
 
-    else:  # Comparaison globale
+    elif view_mode == "Comparaison globale":
         all_data = []
         for sport_name, sport_data in data.items():
             for entry in sport_data["entries"]:
@@ -128,6 +131,114 @@ else:
 
             if summary_data:
                 st.dataframe(pd.DataFrame(summary_data), use_container_width=True, hide_index=True)
+
+    else:  # Gestion des données
+        st.subheader("Gestion et export des données")
+
+        tab1, tab2 = st.tabs(["Modifier les données", "Exporter les données"])
+
+        with tab1:
+            sport_edit = st.selectbox("Sélectionner un sport", list(data.keys()), key="edit_sport")
+            entries_edit = data[sport_edit]["entries"]
+
+            if entries_edit:
+                st.write(f"**{len(entries_edit)} performance(s) enregistrée(s)**")
+
+                # Tableau avec édition
+                df_edit = pd.DataFrame(entries_edit)
+                df_edit["date"] = pd.to_datetime(df_edit["date"])
+                df_edit = df_edit.sort_values("date", ascending=False)
+
+                st.write("Modifier ou supprimer des performances :")
+
+                for idx, row in df_edit.iterrows():
+                    col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
+
+                    with col1:
+                        st.text(row["date"].strftime("%d/%m/%Y"))
+                    with col2:
+                        new_value = st.number_input(
+                            "Valeur",
+                            value=float(row["value"]),
+                            min_value=0.0,
+                            step=1.0,
+                            key=f"edit_{sport_edit}_{row['date'].isoformat()}",
+                            label_visibility="collapsed"
+                        )
+                    with col3:
+                        if st.button("Modifier", key=f"mod_{sport_edit}_{row['date'].isoformat()}"):
+                            # Trouver et modifier l'entrée
+                            date_str = row["date"].isoformat()
+                            for entry in entries_edit:
+                                if entry["date"] == date_str:
+                                    entry["value"] = new_value
+                                    break
+
+                            if update_sport_entries(sport_edit, entries_edit):
+                                st.success("Modifié !")
+                                st.rerun()
+                    with col4:
+                        if st.button("🗑️", key=f"del_{sport_edit}_{row['date'].isoformat()}"):
+                            if delete_entry(sport_edit, row["date"].isoformat()):
+                                st.success("Supprimé !")
+                                st.rerun()
+            else:
+                st.info("Aucune donnée à modifier pour ce sport.")
+
+        with tab2:
+            st.write("Exportez vos données dans différents formats")
+
+            export_format = st.radio("Format d'export", ["JSON", "CSV"], horizontal=True)
+            sport_export = st.selectbox("Sport à exporter", ["Tous les sports"] + list(data.keys()), key="export_sport")
+
+            if sport_export == "Tous les sports":
+                export_data = data
+                filename = "keepgoing_all_sports"
+            else:
+                export_data = {sport_export: data[sport_export]}
+                filename = f"keepgoing_{sport_export.lower().replace(' ', '_')}"
+
+            if export_format == "JSON":
+                json_str = json.dumps(export_data, indent=2, ensure_ascii=False)
+                st.download_button(
+                    label="Télécharger JSON",
+                    data=json_str,
+                    file_name=f"{filename}.json",
+                    mime="application/json",
+                    use_container_width=True
+                )
+
+                with st.expander("Aperçu des données JSON"):
+                    st.code(json_str, language="json")
+
+            else:  # CSV
+                # Convertir en format plat pour CSV
+                csv_data = []
+                for sport_name, sport_data in export_data.items():
+                    for entry in sport_data["entries"]:
+                        csv_data.append({
+                            "Sport": sport_name,
+                            "Date": entry["date"],
+                            "Performance": entry["value"],
+                            "Unité": sport_data["unit"]
+                        })
+
+                if csv_data:
+                    df_csv = pd.DataFrame(csv_data)
+                    csv_str = df_csv.to_csv(index=False)
+
+                    st.download_button(
+                        label="📥 Télécharger CSV",
+                        data=csv_str,
+                        file_name=f"{filename}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+
+                    with st.expander("Aperçu des données CSV"):
+                        st.dataframe(df_csv, use_container_width=True)
+                else:
+                    st.info("Aucune donnée à exporter")
 
 # Sidebar avec stats et déconnexion
 with st.sidebar:

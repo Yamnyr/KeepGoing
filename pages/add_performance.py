@@ -1,7 +1,9 @@
 # pages/add_performance.py
 import streamlit as st
+import pandas as pd
 from datetime import date
-from utils import load_user_sports, update_sport_entries, get_weekly_progress
+from utils import (load_user_sports, update_sport_entries, get_weekly_progress,
+                   calculate_stats, get_monthly_progress)
 
 st.title("Enregistrer une nouvelle performance")
 st.divider()
@@ -26,6 +28,26 @@ else:
     # Sauvegarder la sélection
     st.session_state["selected_sport"] = sport
 
+    # Afficher les statistiques du sport sélectionné
+    entries = data[sport]["entries"]
+
+    if entries:
+        st.subheader(f"Statistiques - {sport}")
+        stats = calculate_stats(entries)
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Dernière performance", f"{stats['last']} {data[sport]['unit']}")
+        with col2:
+            st.metric("Meilleure performance", f"{stats['best']} {data[sport]['unit']}")
+        with col3:
+            st.metric("Moyenne", f"{stats['avg']:.1f} {data[sport]['unit']}")
+        with col4:
+            st.metric("Total séances", stats['total'])
+
+        st.divider()
+
+    # Formulaire d'ajout
     with st.form("add_performance_form"):
         col_a, col_b = st.columns(2)
         with col_a:
@@ -74,6 +96,32 @@ else:
                         st.rerun()
             else:
                 st.error("La performance doit être supérieure à 0")
+
+    # Historique des performances
+    if entries:
+        st.divider()
+        st.subheader("Historique des performances")
+
+        # Trier par date décroissante
+        sorted_entries = sorted(entries, key=lambda x: x["date"], reverse=True)
+
+        # Créer un DataFrame pour l'affichage
+        df_history = pd.DataFrame(sorted_entries)
+        df_history["date"] = pd.to_datetime(df_history["date"]).dt.strftime('%d/%m/%Y')
+        df_history["value"] = df_history["value"].apply(lambda x: f"{x} {data[sport]['unit']}")
+        df_history.columns = ["Date", "Performance"]
+
+        # Afficher les 10 dernières performances
+        display_count = min(10, len(df_history))
+        st.dataframe(
+            df_history.head(display_count),
+            use_container_width=True,
+            hide_index=True
+        )
+
+        if len(df_history) > 10:
+            st.caption(
+                f"Affichage des 10 dernières sur {len(df_history)} performances. Voir toutes les performances dans la section Analyse.")
 
 # Sidebar avec stats et déconnexion
 with st.sidebar:
