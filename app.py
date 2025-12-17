@@ -14,12 +14,7 @@ if not st.user.is_logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.info("Connectez-vous pour accéder à votre espace personnel")
-        # Correction : pas de kwargs avec un seul provider
-        st.button(
-            "Se connecter avec Google",
-            on_click=st.login,  # Suppression de kwargs
-            use_container_width=True
-        )
+        st.button("Se connecter avec Google", on_click=st.login, use_container_width=True)
     st.stop()
 
 # Utilisateur connecté
