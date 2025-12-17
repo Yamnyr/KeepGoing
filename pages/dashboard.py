@@ -58,42 +58,44 @@ else:
     cols = st.columns(3)
     for idx, (sport_name, sport_data) in enumerate(data.items()):
         with cols[idx % 3]:
-            st.subheader(sport_name)
 
-            entries = sport_data["entries"]
+            with st.container(border=True):
+                st.subheader(sport_name)
 
-            if entries:
-                stats = calculate_stats(entries)
-                streak = calculate_streak(entries)
-                week_progress = get_weekly_progress(entries)
+                entries = sport_data["entries"]
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Dernière", f"{stats['last']} {sport_data['unit']}")
-                    st.metric("Meilleure", f"{stats['best']} {sport_data['unit']}")
-                with col2:
-                    st.metric("Moyenne", f"{stats['avg']:.1f} {sport_data['unit']}")
-                    st.metric("Série actuelle", f"{streak} jours")
+                if entries:
+                    stats = calculate_stats(entries)
+                    streak = calculate_streak(entries)
+                    week_progress = get_weekly_progress(entries)
 
-                # Barre de progression hebdomadaire
-                if week_progress > 0:
-                    st.progress(min(week_progress / 7, 1.0))
-                    st.caption(f"{week_progress} séance(s) cette semaine")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Dernière", f"{stats['last']} {sport_data['unit']}")
+                        st.metric("Meilleure", f"{stats['best']} {sport_data['unit']}")
+                    with col2:
+                        st.metric("Moyenne", f"{stats['avg']:.1f} {sport_data['unit']}")
+                        st.metric("Série actuelle", f"{streak} jours")
+
+                    # Barre de progression hebdomadaire
+                    if week_progress > 0:
+                        st.progress(min(week_progress / 7, 1.0))
+                        st.caption(f"{week_progress} séance(s) cette semaine")
+                    else:
+                        st.caption("Aucune séance cette semaine")
+
+                    # Objectif
+                    if sport_data.get("goal"):
+                        goal_progress = (stats['last'] / sport_data['goal']) * 100
+                        st.progress(min(goal_progress / 100, 1.0))
+                        st.caption(f"Objectif : {sport_data['goal']} {sport_data['unit']} ({goal_progress:.0f}%)")
                 else:
-                    st.caption("Aucune séance cette semaine")
+                    st.info("Aucune performance enregistrée")
 
-                # Objectif
-                if sport_data.get("goal"):
-                    goal_progress = (stats['last'] / sport_data['goal']) * 100
-                    st.progress(min(goal_progress / 100, 1.0))
-                    st.caption(f"Objectif : {sport_data['goal']} {sport_data['unit']} ({goal_progress:.0f}%)")
-            else:
-                st.info("Aucune performance enregistrée")
-
-            # Bouton pour ajouter une performance
-            if st.button(f"Nouvelle performance", key=f"add_{sport_name}", use_container_width=True):
-                st.session_state["selected_sport"] = sport_name
-                st.switch_page("pages/add_performance.py")
+                # Bouton pour ajouter une performance
+                if st.button(f"Nouvelle performance", key=f"add_{sport_name}", use_container_width=True):
+                    st.session_state["selected_sport"] = sport_name
+                    st.switch_page("pages/add_performance.py")
 
     # Graphique d'activité
     st.subheader("Activité sur la période")
