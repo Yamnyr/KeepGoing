@@ -14,16 +14,20 @@ if not st.user.is_logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.info("Connectez-vous pour accéder à votre espace personnel")
+        # Correction : pas de kwargs avec un seul provider
         st.button(
             "Se connecter avec Google",
-            on_click=st.login,
-            kwargs={"provider": "google"},
+            on_click=st.login,  # Suppression de kwargs
             use_container_width=True
         )
     st.stop()
 
 # Utilisateur connecté
 st.sidebar.success(f"Connecté en tant que {st.user.email}")
+
+# Bouton de déconnexion dans la sidebar
+if st.sidebar.button("🚪 Se déconnecter"):
+    st.logout()
 
 pages = [
     st.Page("pages/dashboard.py", title="📊 Tableau de bord"),
