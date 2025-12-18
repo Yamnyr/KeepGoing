@@ -238,3 +238,53 @@ def get_activity_by_period(data, period="week"):
         activity[key] = activity.get(key, 0) + 1
 
     return dict(sorted(activity.items()))
+
+
+def render_sidebar(data):
+    """Affiche la sidebar avec les statistiques complètes."""
+    with st.sidebar:
+        if data:
+            # Calcul des statistiques
+            total_sports = len(data)
+            total_sessions = sum(len(s["entries"]) for s in data.values())
+            week_total = sum(get_weekly_progress(s["entries"]) for s in data.values())
+            month_total = sum(get_monthly_progress(s["entries"]) for s in data.values())
+            max_streak = max([calculate_streak(s["entries"]) for s in data.values()], default=0)
+            level_info = get_user_level(total_sessions)
+
+            # Niveau de l'utilisateur
+            st.subheader(f"{level_info['emoji']} {level_info['name']}")
+            if level_info['next_threshold']:
+                st.progress(level_info['progress'] / 100)
+                remaining = level_info['next_threshold'] - level_info['current']
+                st.caption(f"Plus que {remaining} séances !")
+            else:
+                st.success("🎉 Niveau MAX !")
+
+            st.divider()
+
+            # Statistiques globales
+            st.subheader("📈 Statistiques")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Sports", total_sports)
+                st.metric("Ce mois", month_total)
+            with col2:
+                st.metric("Total", total_sessions)
+                st.metric("Cette semaine", week_total)
+
+            st.metric("🔥 Meilleure série", f"{max_streak} jours")
+
+            # st.divider()
+
+            # Sports actifs cette semaine
+            # active_week = sum(get_weekly_progress(s["entries"]) > 0 for s in data.values())
+            # st.metric("⚡ Actifs cette semaine", f"{active_week}/{total_sports}")
+        else:
+            st.info("Aucune donnée disponible")
+
+        st.divider()
+
+        if st.button("🚪 Se déconnecter", use_container_width=True):
+            st.logout()
